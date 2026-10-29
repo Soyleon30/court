@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#151918" />
+    <title>战术板 · 篮球回合编辑器</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Noto+Sans+SC:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <a class="brand" href="#" aria-label="战术板首页">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>
+            <strong>战术板</strong>
+            <small>COURT MOTION</small>
+          </span>
+        </a>
+
+        <div class="court-mode" role="group" aria-label="球场模式">
+          <button class="mode-button active" type="button" data-mode="full">全场</button>
+          <button class="mode-button" type="button" data-mode="half">半场</button>
+        </div>
+
+        <div class="header-actions">
+          <button class="button quiet compact" id="newTacticButton" type="button" title="新建战术">
+            <i data-lucide="file-plus-2" aria-hidden="true"></i>
+            <span>新建</span>
+          </button>
+          <button class="button quiet compact" id="importButton" type="button">
+            <i data-lucide="folder-open" aria-hidden="true"></i>
+            <span>打开</span>
+          </button>
+          <button class="button quiet compact" id="saveButton" type="button">
+            <i data-lucide="save" aria-hidden="true"></i>
+            <span>保存</span>
+          </button>
+          <span class="sync-status" id="syncStatus" role="status" aria-live="polite">本地已保存</span>
+          <input id="fileInput" type="file" accept="application/json,.json" hidden />
+        </div>
+      </header>
+
+      <main class="main-area">
+        <section class="control-bar" aria-label="播放控制">
+          <div class="round-status">
+            <span class="eyebrow">当前</span>
+            <strong id="roundTitle">0 · 初始位置</strong>
+            <span id="editStatus">可拖动编辑</span>
+          </div>
+
+          <div class="transport" role="group" aria-label="播放">
+            <button class="icon-button" id="previousButton" type="button" aria-label="上一回合" title="上一回合">
+              <i data-lucide="skip-back" aria-hidden="true"></i>
+            </button>
+            <button class="play-button" id="playButton" type="button">
+              <i data-lucide="play" aria-hidden="true"></i>
+              <span>运行</span>
+            </button>
+            <button class="icon-button" id="stopButton" type="button" aria-label="停止并回到第 0 回合" title="停止">
+              <i data-lucide="square" aria-hidden="true"></i>
+            </button>
+            <button class="icon-button" id="nextButton" type="button" aria-label="下一回合" title="下一回合">
+              <i data-lucide="skip-forward" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <div class="speed-control">
+            <label for="speedRange">
+              <span>回合速度</span>
+              <output id="speedOutput">1.5 秒</output>
+            </label>
+            <input id="speedRange" type="range" min="0.5" max="4" step="0.1" value="1.5" />
+          </div>
+
+          <label class="toggle-control">
+            <input id="trailToggle" type="checkbox" checked />
+            <span class="toggle-track" aria-hidden="true"></span>
+            <span>轨迹</span>
+          </label>
+
+          <button class="button export-button" id="exportButton" type="button" aria-haspopup="menu" aria-expanded="false">
+            <i data-lucide="download" aria-hidden="true"></i>
+            <span>导出</span>
+            <i data-lucide="chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="export-menu" id="exportMenu" role="menu" hidden>
+            <button type="button" role="menuitem" data-export="mp4">
+              <i data-lucide="smartphone" aria-hidden="true"></i>
+              <span><strong>MP4 视频</strong><small>微信兼容 · H.264</small></span>
+            </button>
+            <button type="button" role="menuitem" data-export="webm">
+              <i data-lucide="video" aria-hidden="true"></i>
+              <span><strong>WebM 视频</strong><small>浏览器备用 · 30 FPS</small></span>
+            </button>
+            <button type="button" role="menuitem" data-export="gif">
+              <i data-lucide="image" aria-hidden="true"></i>
+              <span><strong>GIF 动图</strong><small>通用 · 最大 240 帧</small></span>
+            </button>
+          </div>
+        </section>
+
+        <section class="editor-layout">
+          <aside class="tactic-panel" aria-label="战术列表">
+            <div class="tactic-header">
+              <div>
+                <span class="eyebrow">PLAYBOOK</span>
+                <h2>战术列表</h2>
+              </div>
+              <div class="panel-actions">
+                <span class="tactic-count" id="tacticCount">1</span>
+                <button class="icon-button" id="addTacticButton" type="button" aria-label="新建战术" title="新建战术">
+                  <i data-lucide="plus" aria-hidden="true"></i>
+                </button>
+                <button class="list-edit-button" id="editTacticsButton" type="button" aria-label="编辑战术列表" title="编辑战术列表" aria-pressed="false">
+                  <i data-lucide="pencil" aria-hidden="true"></i>
+                  <span>编辑</span>
+                </button>
+              </div>
+            </div>
+            <ol class="tactic-list" id="tacticList"></ol>
+          </aside>
+
+          <div class="stage-column">
+            <div class="court-heading">
+              <div class="team-legend" aria-label="球队图例">
+                <span><b class="team-dot home"></b>红队 1–5</span>
+                <span><b class="team-dot away"></b>蓝队 1–5</span>
+                <span><b class="ball-dot"></b>篮球</span>
+              </div>
+              <div class="selection-readout" id="selectionReadout">选择并拖动球员或篮球</div>
+            </div>
+
+            <div class="court-wrap full" id="courtWrap">
+              <canvas id="courtCanvas" aria-label="篮球战术编辑球场" tabindex="0"></canvas>
+              <div class="court-progress" id="courtProgress" aria-hidden="true">
+                <span></span>
+              </div>
+            </div>
+
+            <div class="path-editor" id="pathEditor" hidden>
+              <span class="path-editor-label"><i data-lucide="route" aria-hidden="true"></i>路径</span>
+              <div class="path-step-list" id="pathStepList" role="group" aria-label="回合路径点"></div>
+              <button class="icon-button" id="addWaypointButton" type="button" aria-label="添加转折点" title="添加转折点">
+                <i data-lucide="plus" aria-hidden="true"></i>
+              </button>
+              <button class="icon-button" id="deleteWaypointButton" type="button" aria-label="删除当前转折点" title="删除当前转折点">
+                <i data-lucide="trash-2" aria-hidden="true"></i>
+              </button>
+            </div>
+
+            <div class="opportunity-editor" id="opportunityEditor" hidden>
+              <span class="opportunity-editor-label"><i data-lucide="arrow-up-right" aria-hidden="true"></i>潜在传球 · 可传可不传</span>
+              <select id="opportunityFrom" aria-label="传球发起球员"></select>
+              <span class="opportunity-arrow-label" aria-hidden="true">→</span>
+              <select id="opportunityTo" aria-label="传球接球队员"></select>
+              <button class="button compact" id="removeOpportunityButton" type="button">
+                <i data-lucide="trash-2" aria-hidden="true"></i>
+                <span>移除</span>
+              </button>
+              <button class="button primary compact" id="addOpportunityButton" type="button">
+                <i data-lucide="plus" aria-hidden="true"></i>
+                <span>添加箭头</span>
+              </button>
+            </div>
+
+            <div class="stage-footer">
+              <span><kbd>拖动</kbd> 设置位置</span>
+              <span><kbd>方向键</kbd> 微调所选对象</span>
+              <button class="text-button" id="resetTurnButton" type="button">
+                <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                <span id="resetTurnLabel">重置本回合</span>
+              </button>
+            </div>
+          </div>
+
+          <aside class="timeline-panel" aria-label="回合时间线">
+            <div class="timeline-header">
+              <div>
+                <span class="eyebrow">SEQUENCE</span>
+                <h2>回合时间线</h2>
+              </div>
+              <div class="panel-actions">
+                <button class="icon-button" id="addTurnButton" type="button" aria-label="新增回合" title="新增回合">
+                  <i data-lucide="plus" aria-hidden="true"></i>
+                </button>
+                <button class="list-edit-button" id="editTurnsButton" type="button" aria-label="编辑回合列表" title="编辑回合列表" aria-pressed="false">
+                  <i data-lucide="pencil" aria-hidden="true"></i>
+                  <span>编辑</span>
+                </button>
+              </div>
+            </div>
+
+            <ol class="turn-list" id="turnList"></ol>
+
+            <div class="timeline-footer">
+              <button class="button primary" id="addTurnWideButton" type="button">
+                <i data-lucide="plus" aria-hidden="true"></i>
+                <span>新增回合</span>
+              </button>
+              <p>新回合会继承当前位置</p>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <div class="export-overlay" id="exportOverlay" hidden>
+      <div class="export-dialog" role="status" aria-live="polite">
+        <div class="export-spinner" aria-hidden="true"></div>
+        <strong id="exportTitle">正在生成视频</strong>
+        <span id="exportDetail">准备画面…</span>
+        <div class="export-progress"><span id="exportProgressBar"></span></div>
+      </div>
+    </div>
+
+    <div class="confirm-overlay" id="confirmOverlay" hidden>
+      <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmDetail">
+        <div class="confirm-icon" aria-hidden="true"><i data-lucide="trash-2"></i></div>
+        <h2 id="confirmTitle">确认删除</h2>
+        <p id="confirmDetail">删除后无法恢复。</p>
+        <div class="confirm-actions">
+          <button class="button quiet" id="cancelDeleteButton" type="button">取消</button>
+          <button class="button danger" id="confirmDeleteButton" type="button">删除</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+    <canvas id="exportCanvas" hidden></canvas>
+  </body>
+</html>
