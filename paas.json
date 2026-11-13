@@ -1,0 +1,36 @@
+{
+  "name": "篮球战术板",
+  "slug": "basketball-tactics",
+  "version": "1.0.0",
+  "description": "Node 单容器 · MySQL 共享战术工作区",
+  "deploy_mode": "single",
+  "network": "basketball-tactics-net",
+  "services": [
+    {
+      "key": "app",
+      "name": "战术板应用",
+      "context": ".",
+      "dockerfile": "Dockerfile",
+      "image": "basketball-tactics:latest",
+      "container_name": "basketball-tactics",
+      "host_port": 4173,
+      "container_port": 4173,
+      "env_keys": [
+        "PORT",
+        "MYSQL_HOST",
+        "MYSQL_PORT",
+        "MYSQL_DATABASE",
+        "MYSQL_USER",
+        "MYSQL_PASSWORD"
+      ]
+    }
+  ],
+  "env_example": {
+    "PORT": "4173",
+    "MYSQL_HOST": "host.docker.internal",
+    "MYSQL_PORT": "3306",
+    "MYSQL_DATABASE": "basketball",
+    "MYSQL_USER": "basketball",
+    "MYSQL_PASSWORD": "CHANGE_ME"
+  }
+}

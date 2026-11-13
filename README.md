@@ -2,6 +2,53 @@
 
 一个网页版篮球回合战术编辑器，支持浏览器离线编辑，也支持通过 Node 服务保存到 MySQL 8.0。
 
+## LitePaaS / Docker 部署
+
+项目已提供单容器 Docker 配置。前端、静态资源和 Node API 在同一个容器中运行，业务数据保存在 MySQL，不需要挂载本地数据卷。
+
+### 打包源码
+
+Windows 双击：
+
+```powershell
+.\scripts\pack-source.bat
+```
+
+或在 PowerShell 中执行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\pack-source.ps1
+```
+
+上传 `dist/basketball-tactics-source_*.tar.gz` 到 LitePaaS。源码包根目录包含 `Dockerfile` 和 `paas.json`，LitePaaS 会在服务器构建并启动 `basketball-tactics` 容器。
+
+### LitePaaS 新建应用
+
+上传源码包后，确认环境变量：
+
+| 变量 | 示例 | 说明 |
+|---|---|---|
+| `PORT` | `4173` | 容器监听端口 |
+| `MYSQL_HOST` | `host.docker.internal` | ECS 上 MySQL 所在地址 |
+| `MYSQL_PORT` | `3306` | 按 ECS 实际 MySQL 端口填写 |
+| `MYSQL_DATABASE` | `basketball` | 应用数据库 |
+| `MYSQL_USER` | `basketball` | 需要能创建数据库和表，或提前执行 `schema.sql` |
+| `MYSQL_PASSWORD` | 实际密码 | 不要使用示例值 |
+
+对外访问端口是 `4173`。首次启动会自动创建数据库和 `workspaces` 表；如果数据库账号没有建库权限，请先执行 `schema.sql` 并给账号授予对应权限。
+
+### 日常迭代
+
+修改代码后再次执行 `scripts\pack-source.bat`，上传新的源码包并部署。数据在 MySQL 中，重建容器不会清除战术数据。
+
+Dockerfile 默认使用国内 DaoCloud Node 镜像和 npmmirror npm 源：
+
+```dockerfile
+ARG NODE_BASE_IMAGE=docker.m.daocloud.io/library/node:20-alpine
+```
+
+如有企业私有镜像，可在直接构建时通过 `--build-arg NODE_BASE_IMAGE=...` 替换。
+
 ## 运行
 
 ```bash
